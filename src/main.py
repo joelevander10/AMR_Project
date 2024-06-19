@@ -1,4 +1,3 @@
-import threading
 import rospy
 from sensors import lidar
 from sensors import imu
@@ -6,16 +5,13 @@ from sensors import imu
 def main():
     rospy.init_node('lidar_imu_listener', anonymous=True)
     
-    lidar_thread = threading.Thread(target=lidar.start_lidar_subscriber)
-    imu_thread = threading.Thread(target=imu.imu_data_collection)
+    rate = rospy.Rate(22)  # Sampling rate of 22 Hz
     
-    lidar_thread.start()
-    imu_thread.start()
-    
-    rospy.spin()
-    
-    lidar_thread.join()
-    imu_thread.join()
+    while not rospy.is_shutdown():
+        lidar.lidar_data_collection()
+        imu.imu_data_collection()
+        
+        rate.sleep()
 
 if __name__ == '__main__':
     main()
