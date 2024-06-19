@@ -78,7 +78,6 @@ def callback(data):
             
             if len(velocity_history) == moving_average_window:
                 avg_velocity = moving_average(velocity_history)
-                print(f"Lidar Point: ({x:.4f}, {y:.4f}, {z:.4f})")
                 print(f"Velocity using Centroid: {avg_velocity:.6f} m/s")
                 print("---")
                 velocity_history = []
