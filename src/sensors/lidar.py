@@ -63,6 +63,7 @@ def callback(data):
     
     current_centroid = centroid(points)
     current_time = rospy.Time.now().to_sec()
+    print(f"Centroid: x={current_centroid[0]:.6f}, y={current_centroid[1]:.6f}, z={current_centroid[2]:.6f}")
     
     if previous_centroid is not None:
         dist = distance(current_centroid, previous_centroid)
