@@ -1,12 +1,14 @@
 import serial
 import time
 
-def is_valid_input(speeds):
+def is_valid_input(speeds, run_duration):
     if len(speeds) != 4:
         return False
     for speed in speeds:
         if not speed.lstrip("-").isdigit() or int(speed) < -1000 or int(speed) > 1000:
             return False
+    if not run_duration.isdigit() or int(run_duration) <= 0:
+        return False
     return True
 
 def calculate_error(sent_speeds, received_speeds):
@@ -21,17 +23,21 @@ def main():
     ser = serial.Serial('/dev/ttyACM0', 9600)  
     #time.sleep(2)  # Wait for the serial connection to initialize
 
-    print("Masukkan kecepatan dalam langkah per detik (0-1000 sps) untuk masing-masing motor stepper (dipisahkan oleh spasi):")
+    print("Masukkan kecepatan dalam langkah per detik (0-1000 sps) untuk masing-masing motor stepper (dipisahkan oleh spasi) dan durasi putaran dalam milidetik:")
     while True:
         user_input = input()
-        sent_speeds = user_input.split()
-
-        if not is_valid_input(sent_speeds):
-            print("Input tidak valid. Harap masukkan 4 nilai kecepatan yang valid (-1000-1000) dipisahkan oleh spasi.")
+        input_parts = user_input.split()
+        if len(input_parts) != 5:
+            print("Input tidak valid. Harap masukkan 4 nilai kecepatan yang valid (-1000-1000) dan durasi putaran dalam milidetik.")
+            continue
+        sent_speeds = input_parts[:4]
+        run_duration = input_parts[4]
+        if not is_valid_input(sent_speeds, run_duration):
+            print("Input tidak valid. Harap masukkan 4 nilai kecepatan yang valid (-1000-1000) dan durasi putaran dalam milidetik.")
             continue
 
-        # Send the speeds to the Arduino
-        speeds_str = " ".join(sent_speeds) + "\n"
+        # Send the speeds and run duration to the Arduino
+        speeds_str = " ".join(sent_speeds) + " " + run_duration + "\n"
         ser.write(speeds_str.encode())
 
         # Wait for acknowledgment and speed values from Arduino
