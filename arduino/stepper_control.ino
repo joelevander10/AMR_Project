@@ -35,7 +35,7 @@ void setup() {
   stepper3.setSpeed(0);
   stepper4.setSpeed(0);
 
-  Serial.println("Masukkan kecepatan dalam RPM untuk masing-masing stepper motor (0-1000 RPM):");
+  Serial.println("Masukkan kecepatan dalam RPM untuk masing-masing stepper motor (0-1000 RPM) dan durasi putaran dalam milidetik:");
 }
 
 void loop() {
@@ -45,16 +45,21 @@ void loop() {
   // Check if there is incoming serial data
   while (Serial.available() > 0) {
     char incomingByte = Serial.read();
-
     if (incomingByte == '\n') {
       inputBuffer[inputIndex] = '\0'; // Null-terminate the input string
 
-      // Split input string into speed values
+      // Split input string into speed values and run duration
       int speeds[4];
+      unsigned long runDuration;
       char* token = strtok(inputBuffer, " ");
       for (int i = 0; i < 4 && token != NULL; i++) {
         speeds[i] = atoi(token);
         token = strtok(NULL, " ");
+      }
+      if (token != NULL) {
+        runDuration = atol(token);
+      } else {
+        runDuration = 1000; // Default run duration if not provided
       }
 
       // Convert RPM to steps per second (sps)
@@ -70,18 +75,17 @@ void loop() {
       stepper4.setSpeed(sps4);
 
       // Display the set speeds
-      Serial.print("Kecepatan stepper 1 (sps): ");
-      Serial.println(sps1);
-      Serial.print("Kecepatan stepper 2 (sps): ");
-      Serial.println(sps2);
-      Serial.print("Kecepatan stepper 3 (sps): ");
-      Serial.println(sps3);
-      Serial.print("Kecepatan stepper 4 (sps): ");
+      Serial.print("SPEEDS ");
+      Serial.print(sps1);
+      Serial.print(" ");
+      Serial.print(sps2);
+      Serial.print(" ");
+      Serial.print(sps3);
+      Serial.print(" ");
       Serial.println(sps4);
 
       // Start timing
       unsigned long startTime = millis();
-      unsigned long runDuration = 1000; // Run duration in milliseconds (5 seconds)
       bool isRunning = true;
 
       // Run the stepper motors for the specified duration
@@ -98,8 +102,6 @@ void loop() {
           stepper3.setSpeed(0);
           stepper4.setSpeed(0);
           isRunning = false;
-
-          // Display message indicating the motors have stopped
           Serial.println("Motor berhenti setelah beberapa detik.");
         }
       }
@@ -109,6 +111,7 @@ void loop() {
     } else {
       // Add the incoming byte to the input buffer
       inputBuffer[inputIndex++] = incomingByte;
+
       // Prevent buffer overflow
       if (inputIndex >= sizeof(inputBuffer) - 1) {
         inputIndex = sizeof(inputBuffer) - 1;
