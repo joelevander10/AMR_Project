@@ -22,12 +22,14 @@ def lidar_callback(data, sensor_data):
         previous_centroid = None
         previous_time = None
         rospy.loginfo("LiDAR is stationary.")
+        sensor_data.velocity = 0.0  # Set default velocity to 0.0
         return
     
     current_centroid = centroid(points)
     current_time = rospy.Time.now().to_sec()
     
     sensor_data.centroid = current_centroid
+    sensor_data.velocity = 0.0  # Set default velocity to 0.0
     
     if previous_centroid is not None:
         dist = distance(current_centroid, previous_centroid)
