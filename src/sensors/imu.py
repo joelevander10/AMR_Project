@@ -4,15 +4,7 @@ import busio
 import adafruit_bno055
 import math
 import rospy
-
-def is_sensor_connected_to_i2c(i2c):
-    try:
-        while not i2c.try_lock():
-            pass
-        i2c.unlock()
-        return True
-    except Exception:
-        return False
+from sensors.sensor_data import SensorData
 
 # Initialize the I2C bus
 i2c = busio.I2C(board.SCL, board.SDA)
@@ -41,63 +33,49 @@ print("Initial orientation:")
 print("Pitch: {:.3f} Roll: {:.3f} Yaw: {:.3f}".format(initial_pitch, initial_roll, initial_yaw))
 
 def imu_data_collection():
-    rate = rospy.Rate(22)  # Sampling rate of 22 Hz
+    sensor_data = SensorData()
     
-    while not rospy.is_shutdown():
-        start_time = time.time()
-        
-        # Read acceleration (unit: m/s^2)
-        acceleration = sensor.acceleration
-        accel_magnitude = math.sqrt(acceleration[0]**2 + acceleration[1]**2 + acceleration[2]**2)
-        print("Acceleration:")
-        print("X: {:.3f} Y: {:.3f} Z: {:.3f} Magnitude: {:.3f}".format(acceleration[0], acceleration[1], acceleration[2], accel_magnitude))
-        
-        # Read magnetic field strength (unit: microtesla)
-        magnetic = sensor.magnetic
-        mag_magnitude = math.sqrt(magnetic[0]**2 + magnetic[1]**2 + magnetic[2]**2)
-        print("Magnetic Field Strength:")
-        print("X: {:.3f} Y: {:.3f} Z: {:.3f} Magnitude: {:.3f}".format(magnetic[0], magnetic[1], magnetic[2], mag_magnitude))
-        
-        # Read gyroscope data (unit: degrees/sec)
-        gyro = sensor.gyro
-        gyro_magnitude = math.sqrt(gyro[0]**2 + gyro[1]**2 + gyro[2]**2)
-        print("Gyroscope:")
-        print("X: {:.3f} Y: {:.3f} Z: {:.3f} Magnitude: {:.3f}".format(gyro[0], gyro[1], gyro[2], gyro_magnitude))
-        
-        # Read linear acceleration (unit: m/s^2)
-        linear_acceleration = sensor.linear_acceleration
-        linear_accel_magnitude = math.sqrt(linear_acceleration[0]**2 + linear_acceleration[1]**2 + linear_acceleration[2]**2)
-        print("Linear Acceleration:")
-        print("X: {:.3f} Y: {:.3f} Z: {:.3f} Magnitude: {:.3f}".format(linear_acceleration[0], linear_acceleration[1], linear_acceleration[2], linear_accel_magnitude))
-        
-        # Read gravity vector (unit: m/s^2)
-        gravity = sensor.gravity
-        gravity_magnitude = math.sqrt(gravity[0]**2 + gravity[1]**2 + gravity[2]**2)
-        print("Gravity Vector:")
-        print("X: {:.3f} Y: {:.3f} Z: {:.3f} Magnitude: {:.3f}".format(gravity[0], gravity[1], gravity[2], gravity_magnitude))
-        
-        # Read Euler angles (unit: degrees)
-        euler = sensor.euler
-        pitch, roll, yaw = euler[1], euler[2], euler[0]
-        print("Euler Angles:")
-        print("Pitch: {:.3f} Roll: {:.3f} Yaw: {:.3f}".format(pitch, roll, yaw))
-        
-        # Read quaternion (no unit)
-        quaternion = sensor.quaternion
-        print("Quaternion:")
-        print("W: {:.3f} X: {:.3f} Y: {:.3f} Z: {:.3f}".format(quaternion[0], quaternion[1], quaternion[2], quaternion[3]))
-        
-        # Calculate the relative orientation
-        relative_pitch = pitch - initial_pitch
-        relative_roll = roll - initial_roll
-        relative_yaw = yaw - initial_yaw
-        print("Relative Orientation:")
-        print("Pitch: {:.3f} Roll: {:.3f} Yaw: {:.3f}".format(relative_pitch, relative_roll, relative_yaw))
-        
-        print("======================================")
-        
-        dt = time.time() - start_time
-        sampling_rate = 1 / dt
-        print("Sampling Rate: {:.2f} Hz".format(sampling_rate))
-        
-        rate.sleep()
+    # Read acceleration (unit: m/s^2)
+    acceleration = sensor.acceleration
+    sensor_data.acceleration = acceleration
+    
+    # Read magnetic field strength (unit: microtesla)
+    magnetic = sensor.magnetic
+    sensor_data.magnetic = magnetic
+    
+    # Read gyroscope data (unit: degrees/sec)
+    gyro = sensor.gyro
+    sensor_data.gyroscope = gyro
+    
+    # Read linear acceleration (unit: m/s^2)
+    linear_acceleration = sensor.linear_acceleration
+    sensor_data.linear_acceleration = linear_acceleration
+    
+    # Read gravity vector (unit: m/s^2)
+    gravity = sensor.gravity
+    sensor_data.gravity = gravity
+    
+    # Read Euler angles (unit: degrees)
+    euler = sensor.euler
+    sensor_data.euler = euler
+    
+    # Read quaternion (no unit)
+    quaternion = sensor.quaternion
+    sensor_data.quaternion = quaternion
+    
+    # Calculate the relative orientation
+    relative_pitch = euler[1] - initial_pitch
+    relative_roll = euler[2] - initial_roll
+    relative_yaw = euler[0] - initial_yaw
+    sensor_data.relative_orientation = (relative_pitch, relative_roll, relative_yaw)
+    
+    return sensor_data
+
+def is_sensor_connected_to_i2c(i2c):
+    try:
+        while not i2c.try_lock():
+            pass
+        i2c.unlock()
+        return True
+    except Exception:
+        return False
