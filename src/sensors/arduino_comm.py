@@ -18,7 +18,7 @@ def calculate_error(sent_speeds, received_speeds):
 
 def main():
     # Set up serial connection to the Arduino
-    ser = serial.Serial('COM8', 9600)  # Update '/dev/ttyACM0' to your Arduino port
+    ser = serial.Serial('/dev/ttyACM0', 9600)  
     #time.sleep(2)  # Wait for the serial connection to initialize
 
     print("Masukkan kecepatan dalam langkah per detik (0-1000 sps) untuk masing-masing motor stepper (dipisahkan oleh spasi):")
