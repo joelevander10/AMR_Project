@@ -4,6 +4,10 @@ import sensor_msgs.point_cloud2 as pc2
 import time
 import math
 
+min_time_threshold = 0.01
+velocity_threshold = 0.23
+moving_average_window = 2
+
 def lidar_callback(data):
     global previous_centroid, previous_time, velocity_history, data_count, averaged_data_count
     
