@@ -3,6 +3,7 @@ import rospy
 from sensors import lidar
 from sensors import imu
 from sensors.sensor_data import SensorData
+from sensor_msgs.msg import PointCloud2
 import math
 
 def print_sensor_data(sensor_data):
