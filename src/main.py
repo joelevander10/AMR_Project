@@ -77,7 +77,8 @@ def main():
         sensor_data.quaternion = imu_data.quaternion
         sensor_data.relative_orientation = imu_data.relative_orientation
         
-        lidar.lidar_callback(None, sensor_data)
+        lidar_data = rospy.wait_for_message('/lslidar_point_cloud', PointCloud2)
+        lidar.lidar_callback(lidar_data, sensor_data)
         
         print_sensor_data(sensor_data)
         
