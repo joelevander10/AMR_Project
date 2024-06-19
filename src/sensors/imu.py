@@ -3,36 +3,38 @@ import board
 import busio
 import adafruit_bno055
 import math
+import rospy
+
+# Initialize the I2C bus
+i2c = busio.I2C(board.SCL, board.SDA)
+
+# Check if the sensor is connected to the I2C bus
+if not is_sensor_connected_to_i2c(i2c):
+    print("BNO055 sensor not detected on the I2C bus. Please check the wiring and connection.")
+    exit(1)
+print("BNO055 sensor detected on the I2C bus")
+
+# Initialize the BNO055 sensor
+sensor = adafruit_bno055.BNO055_I2C(i2c)
+
+# Initialize the sensor
+try:
+    sensor.mode = adafruit_bno055.NDOF_MODE
+except (RuntimeError, OSError) as e:
+    print("Failed to initialize BNO055 sensor: {}".format(e))
+    exit(1)
+print("BNO055 sensor initialized")
+
+# Get the initial orientation
+initial_euler = sensor.euler
+initial_pitch, initial_roll, initial_yaw = initial_euler[1], initial_euler[2], initial_euler[0]
+print("Initial orientation:")
+print("Pitch: {:.3f} Roll: {:.3f} Yaw: {:.3f}".format(initial_pitch, initial_roll, initial_yaw))
 
 def imu_data_collection():
-    # Initialize the I2C bus
-    i2c = busio.I2C(board.SCL, board.SDA)
+    rate = rospy.Rate(22)  # Sampling rate of 22 Hz
     
-    # Check if the sensor is connected to the I2C bus
-    if not is_sensor_connected_to_i2c(i2c):
-        print("BNO055 sensor not detected on the I2C bus. Please check the wiring and connection.")
-        return
-    print("BNO055 sensor detected on the I2C bus")
-    
-    # Initialize the BNO055 sensor
-    sensor = adafruit_bno055.BNO055_I2C(i2c)
-    
-    # Initialize the sensor
-    try:
-        sensor.mode = adafruit_bno055.NDOF_MODE
-    except (RuntimeError, OSError) as e:
-        print("Failed to initialize BNO055 sensor: {}".format(e))
-        return
-    print("BNO055 sensor initialized")
-    
-    # Get the initial orientation
-    initial_euler = sensor.euler
-    initial_pitch, initial_roll, initial_yaw = initial_euler[1], initial_euler[2], initial_euler[0]
-    print("Initial orientation:")
-    print("Pitch: {:.3f} Roll: {:.3f} Yaw: {:.3f}".format(initial_pitch, initial_roll, initial_yaw))
-    
-    # Main loop
-    while True:
+    while not rospy.is_shutdown():
         start_time = time.time()
         
         # Read acceleration (unit: m/s^2)
@@ -89,7 +91,7 @@ def imu_data_collection():
         sampling_rate = 1 / dt
         print("Sampling Rate: {:.2f} Hz".format(sampling_rate))
         
-        time.sleep(0.1)
+        rate.sleep()
 
 def is_sensor_connected_to_i2c(i2c):
     try:
