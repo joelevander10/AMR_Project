@@ -8,6 +8,12 @@ min_time_threshold = 0.01
 velocity_threshold = 0.23
 moving_average_window = 2
 
+previous_centroid = None
+previous_time = None
+velocity_history = []
+data_count = 0
+averaged_data_count = 0
+
 def lidar_callback(data):
     global previous_centroid, previous_time, velocity_history, data_count, averaged_data_count
     
@@ -50,6 +56,10 @@ def lidar_callback(data):
     
     data_count += 1
 
+def lidar_data_collection():
+    rospy.Subscriber('/lslidar_point_cloud', PointCloud2, lidar_callback)
+    rospy.spin()
+
 def centroid(points):
     x_sum = y_sum = z_sum = 0
     for point in points:
@@ -85,17 +95,3 @@ def is_lidar_stationary(points, threshold=0.01):
         max_z = max(max_z, z)
     
     return (max_x - min_x) < threshold and (max_y - min_y) < threshold and (max_z - min_z) < threshold
-
-def start_lidar_subscriber():
-    global previous_centroid, previous_time, velocity_history, data_count, averaged_data_count
-    
-    previous_centroid = None
-    previous_time = None
-    velocity_history = []
-    data_count = 0
-    averaged_data_count = 0
-    
-    rospy.Subscriber('/lslidar_point_cloud', PointCloud2, lidar_callback)
-    
-    while not rospy.is_shutdown():
-        rospy.spin()
