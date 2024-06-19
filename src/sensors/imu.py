@@ -6,6 +6,15 @@ import math
 import rospy
 from sensors.sensor_data import SensorData
 
+def is_sensor_connected_to_i2c(i2c):
+    try:
+        while not i2c.try_lock():
+            pass
+        i2c.unlock()
+        return True
+    except Exception:
+        return False
+
 # Initialize the I2C bus
 i2c = busio.I2C(board.SCL, board.SDA)
 
@@ -70,12 +79,3 @@ def imu_data_collection():
     sensor_data.relative_orientation = (relative_pitch, relative_roll, relative_yaw)
     
     return sensor_data
-
-def is_sensor_connected_to_i2c(i2c):
-    try:
-        while not i2c.try_lock():
-            pass
-        i2c.unlock()
-        return True
-    except Exception:
-        return False
