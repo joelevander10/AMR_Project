@@ -91,6 +91,7 @@ def start_lidar_subscriber():
     data_count = 0
     averaged_data_count = 0
     
-    rospy.init_node('lidar_listener', anonymous=True)
     rospy.Subscriber('/lslidar_point_cloud', PointCloud2, lidar_callback)
-    rospy.spin()
+    
+    while not rospy.is_shutdown():
+        rospy.spin()
