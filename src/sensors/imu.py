@@ -5,6 +5,15 @@ import adafruit_bno055
 import math
 import rospy
 
+def is_sensor_connected_to_i2c(i2c):
+    try:
+        while not i2c.try_lock():
+            pass
+        i2c.unlock()
+        return True
+    except Exception:
+        return False
+
 # Initialize the I2C bus
 i2c = busio.I2C(board.SCL, board.SDA)
 
@@ -92,12 +101,3 @@ def imu_data_collection():
         print("Sampling Rate: {:.2f} Hz".format(sampling_rate))
         
         rate.sleep()
-
-def is_sensor_connected_to_i2c(i2c):
-    try:
-        while not i2c.try_lock():
-            pass
-        i2c.unlock()
-        return True
-    except Exception:
-        return False
