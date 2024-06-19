@@ -56,7 +56,10 @@ def print_sensor_data(sensor_data):
         sensor_data.centroid[0], sensor_data.centroid[1], sensor_data.centroid[2]
     ))
     
-    print("Velocity using Centroid: {:.6f} m/s".format(sensor_data.velocity))
+    if sensor_data.velocity is not None:
+        print("Velocity using Centroid: {:.6f} m/s".format(sensor_data.velocity))
+    else:
+        print("Velocity using Centroid: N/A")
     
     print("======================================")
 
