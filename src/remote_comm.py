@@ -1,80 +1,153 @@
+import time
 import pygame
 import serial
-import time
-import math
 
-# Initialize Pygame
-pygame.init()
+def is_valid_input(speeds):
+    if len(speeds) != 4:
+        return False
+    for speed in speeds:
+        if not speed.lstrip("-").isdigit() or int(speed) < -1000 or int(speed) > 1000:
+            return False
+    return True
 
-# Check for connected joysticks
-joystick_count = pygame.joystick.get_count()
-print(f"Number of joysticks: {joystick_count}")
+def calculate_error(sent_speeds, received_speeds):
+    errors = []
+    for sent, received in zip(sent_speeds, received_speeds):
+        error = abs(int(sent) - int(received))
+        errors.append(error)
+    return errors
 
-# Initialize the Xbox 360 controller
-if joystick_count > 0:
+def send_command(fl, br, rl, bl):
+    speeds = [fl, br, rl, bl]
+    if not is_valid_input(speeds):
+        print("Input tidak valid. Harap masukkan 4 nilai kecepatan yang valid (-1000-1000).")
+        return
+
+    speeds_str = " ".join(map(str, speeds)) + "\n"
+    ser.write(speeds_str.encode())
+
+    # Wait for acknowledgment and speed values from Arduino
+    while True:
+        if ser.in_waiting > 0:
+            response = ser.readline().decode().strip()
+            if response.startswith("SPEEDS "):
+                received_speeds = response.split()[1:]
+                errors = calculate_error(speeds, received_speeds)
+                print("Nilai error komunikasi:")
+                print(f"Stepper 1: {errors[0]} sps")
+                print(f"Stepper 2: {errors[1]} sps")
+                print(f"Stepper 3: {errors[2]} sps")
+                print(f"Stepper 4: {errors[3]} sps")
+                break
+            elif response == "ERROR":
+                print("Arduino mendeteksi nilai kecepatan yang tidak valid. Harap coba lagi.")
+                break
+            else:
+                print("Respon tidak dikenal dari Arduino. Harap periksa koneksi serial.")
+                break
+
+def main():
+    # Initialize Pygame
+    pygame.init()
+
+    # Set up the joystick
+    pygame.joystick.init()
     joystick = pygame.joystick.Joystick(0)
     joystick.init()
-    print(f"Joystick initialized: {joystick.get_name()}")
-else:
-    print("No joystick found.")
-    quit()
 
-# Set up serial connection to the Arduino
-ser = serial.Serial('/dev/ttyACM0', 9600)  
+    # Set up serial connection to the Arduino
+    global ser
+    ser = serial.Serial('COM4', 9600)  # Replace 'COM4' with the appropriate serial port
 
-def calculate_mecanum_speeds(left_speed_x, left_speed_y, rotation_speed):
-    # Hitung kecepatan untuk setiap motor stepper berdasarkan arah gerak diagonal dan orientasi
-    # (implementasi perhitungan kecepatan tergantung pada konfigurasi roda mecanum wheel)
-    # Contoh perhitungan kecepatan untuk konfigurasi roda mecanum wheel tertentu
-    fl_speed = left_speed_y + left_speed_x + rotation_speed
-    fr_speed = left_speed_y - left_speed_x - rotation_speed
-    rl_speed = left_speed_y - left_speed_x + rotation_speed
-    rr_speed = left_speed_y + left_speed_x - rotation_speed
-    
-    speeds = [fl_speed, fr_speed, rl_speed, rr_speed]
-    
-    # Normalisasi kecepatan menjadi 0 atau 500 sps
-    for i in range(len(speeds)):
-        speeds[i] = 500 if speeds[i] > 0 else -500 if speeds[i] < 0 else 0
-    
-    return speeds
+    is_rb_pressed = False
+    left_y = 0
+    left_x = 0
+    right_x = 0
 
-# Game loop
-while True:
-    # Handle events
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            quit()
-        elif event.type == pygame.JOYAXISMOTION:
-            # Analog wheel kiri untuk menentukan arah gerak diagonal
-            if event.axis == 0:  # Left analog stick horizontal
-                left_speed_x = int(event.value * 500)
-            elif event.axis == 1:  # Left analog stick vertical
-                left_speed_y = int(event.value * -500)
-            
-            # Analog wheel kanan untuk menentukan orientasi (memutar AMR)
-            elif event.axis == 2:  # Right analog stick horizontal
-                rotation_speed = int(event.value * 500)
-            
-        elif event.type == pygame.JOYBUTTONDOWN:
-            # Tombol trigger RB sebagai trigger
-            if event.button == 5:  # RB button
-                trigger_pressed = True
-        elif event.type == pygame.JOYBUTTONUP:
-            if event.button == 5:  # RB button
-                trigger_pressed = False
-    
-    # Kirim perintah ke Arduino hanya jika tombol trigger RB ditekan
-    if trigger_pressed:
-        # Hitung kecepatan untuk setiap motor stepper berdasarkan arah gerak diagonal dan orientasi
-        speeds = calculate_mecanum_speeds(left_speed_x, left_speed_y, rotation_speed)
-        
-        # Kirim kecepatan ke Arduino
-        speeds_str = " ".join(map(str, speeds)) + "\n"
-        ser.write(speeds_str.encode())
-    else:
-        # Jika tombol trigger RB tidak ditekan, kirim perintah untuk menghentikan motor
-        ser.write("0 0 0 0\n".encode())
-    
-    # Update the screen (if needed)
-    pygame.display.flip()
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return
+            elif event.type == pygame.JOYAXISMOTION:
+                if event.axis == 1:
+                    # Left analog stick Y-axis for forward/backward movement
+                    left_y = int(event.value * 500)
+                elif event.axis == 0:
+                    # Left analog stick X-axis for strafing
+                    left_x = int(event.value * 500)
+                elif event.axis == 2:
+                    # Right analog stick X-axis for rotation
+                    right_x = int(event.value * 500)
+            elif event.type == pygame.JOYBUTTONDOWN:
+                if event.button == 5:
+                    # RB trigger
+                    is_rb_pressed = True
+            elif event.type == pygame.JOYBUTTONUP:
+                if event.button == 5:
+                    # RB trigger
+                    is_rb_pressed = False
+
+        if is_rb_pressed:
+            # Determine movement directions based on analog stick values
+            fl = 0
+            br = 0
+            rl = 0
+            bl = 0
+
+            if left_y < 0:
+                # Forward movement
+                fl = 500
+                br = -500
+                rl = -500
+                bl = 500
+            elif left_y > 0:
+                # Backward movement
+                fl = -500
+                br = 500
+                rl = 500
+                bl = -500
+
+            if left_x < 0:
+                # Strafe left
+                fl = 500
+                br = 500
+                rl = -500
+                bl = -500
+            elif left_x > 0:
+                # Strafe right
+                fl = -500
+                br = -500
+                rl = 500
+                bl = 500
+
+            if right_x < 0:
+                # Rotate left
+                fl = 500
+                br = 500
+                rl = 500
+                bl = 500
+            elif right_x > 0:
+                # Rotate right
+                fl = -500
+                br = -500
+                rl = -500
+                bl = -500
+
+            print(f"FL: {fl}, BR: {br}, RL: {rl}, BL: {bl}")
+
+            # Send command to Arduino
+            send_command(fl, br, rl, bl)
+        else:
+            # Stop the motors if RB trigger is not pressed
+            send_command(0, 0, 0, 0)
+
+        time.sleep(0.1)
+
+if __name__ == "__main__":
+    try:
+        main()
+    except serial.SerialException as e:
+        print(f"Terjadi kesalahan komunikasi serial: {e}")
+    except KeyboardInterrupt:
+        print("Program dihentikan oleh pengguna.")
