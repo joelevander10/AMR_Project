@@ -23,7 +23,7 @@ def main():
     left_y = 0
     left_x = 0
     right_x = 0
-
+    
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -55,53 +55,52 @@ def main():
             rl = 0
             bl = 0
 
-            if left_y > 0:
-                # Forward movement
-                fl = 500
-                br = -500
-                rl = -500
-                bl = 500
-            elif left_y < 0:
-                # Backward movement
-                fl = -500
-                br = 500
-                rl = 500
-                bl = -500
+            # Diagonal movements
+            if abs(left_y) > 250 and abs(left_x) > 250:
+                if left_y < -250 and left_x > 250:
+                    # Diagonal Front Right
+                    fl, br, rl, bl = -500, 0, 500, 0
+                elif left_y > 250 and left_x < -250:
+                    # Diagonal Back Left
+                    fl, br, rl, bl = 500, 0, -500, 0
+                elif left_y > 250 and left_x > 250:
+                    # Diagonal Back Right
+                    fl, br, rl, bl = 0, -500, 0, -500
+                elif left_y < -250 and left_x < -250:
+                    # Diagonal Front Left
+                    fl, br, rl, bl = 0, 500, 0, -500
+            else:
+                # Existing movements
+                if left_y < -250:
+                    # Forward movement
+                    fl, br, rl, bl = 500, -500, -500, 500
+                elif left_y > 250:
+                    # Backward movement
+                    fl, br, rl, bl = -500, 500, 500, -500
+                elif left_x < -250:
+                    # Strafe left
+                    fl, br, rl, bl = 500, 500, -500, -500
+                elif left_x > 250:
+                    # Strafe right
+                    fl, br, rl, bl = -500, -500, 500, 500
 
-            if left_x < 0:
-                # Strafe left
-                fl = 500
-                br = 500
-                rl = -500
-                bl = -500
-            elif left_x > 0:
-                # Strafe right
-                fl = -500
-                br = -500
-                rl = 500
-                bl = 500
-
-            if right_x < 0:
-                # Rotate left
-                fl = 500
-                br = 500
-                rl = 500
-                bl = 500
-            elif right_x > 0:
-                # Rotate right
-                fl = -500
-                br = -500
-                rl = -500
-                bl = -500
+            # Rotation (overrides other movements)
+            if abs(right_x) > 250:
+                if right_x < -250:
+                    # Rotate left
+                    fl, br, rl, bl = 500, 500, 500, 500
+                elif right_x > 250:
+                    # Rotate right
+                    fl, br, rl, bl = -500, -500, -500, -500
 
             print(f"FL: {fl}, BR: {br}, RL: {rl}, BL: {bl}")
-
             # Send command to Arduino
             send_command(fl, br, rl, bl)
         else:
             # Stop the motors if RB trigger is not pressed
             send_command(0, 0, 0, 0)
-        time.sleep(1)
+
+        time.sleep(0.1)  # Reduced sleep time for more responsive control
+
 if __name__ == "__main__":
     main()
-
