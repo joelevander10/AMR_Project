@@ -40,11 +40,11 @@ def main():
                     # Right analog stick X-axis for rotation
                     right_x = int(event.value * 500)
             elif event.type == pygame.JOYBUTTONDOWN:
-                if event.button == 5:
+                if event.button == 4+3:
                     # RB trigger
                     is_rb_pressed = True
             elif event.type == pygame.JOYBUTTONUP:
-                if event.button == 5:
+                if event.button == 4+3:
                     # RB trigger
                     is_rb_pressed = False
 
@@ -73,10 +73,10 @@ def main():
                 # Existing movements
                 if left_y < -250:
                     # Forward movement
-                    fl, br, rl, bl = 500, -500, -500, 500
+                    fl, br, rl, bl = -500, 500, 500, -500
                 elif left_y > 250:
                     # Backward movement
-                    fl, br, rl, bl = -500, 500, 500, -500
+                    fl, br, rl, bl = 500, -500, -500, 500
                 elif left_x < -250:
                     # Strafe left
                     fl, br, rl, bl = 500, 500, -500, -500
@@ -100,7 +100,7 @@ def main():
             # Stop the motors if RB trigger is not pressed
             send_command(0, 0, 0, 0)
 
-        time.sleep(0.1)  # Reduced sleep time for more responsive control
+        time.sleep(1)  # Reduced sleep time for more responsive control
 
 if __name__ == "__main__":
     main()
