@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parameter</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #speed-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar bg-body-tertiary">
+        <div class="container-fluid d-flex">
+            <a href="/" class="btn btn-outline-primary me-auto">Main</a>
+            <div class="d-flex justify-content-end">
+                <a href="map.html" class="btn btn-outline-primary me-2">Map</a>
+                <a href="telemetry.html" class="btn btn-outline-primary me-2">Telemetry</a>
+                <a href="manual.html" class="btn btn-outline-primary me-2">Manual</a>
+                <a href="parameter.html" class="btn btn-outline-primary">Parameter</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h1>Parameter Page</h1>
+        <div class="mt-4">
+            <h2>Speed Control</h2>
+            <div class="speed-control mt-3">
+                <button id="decrease-speed" class="btn btn-primary">-</button>
+                <span id="speed-value">2</span>
+                <button id="increase-speed" class="btn btn-primary">+</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const decreaseButton = document.getElementById('decrease-speed');
+        const increaseButton = document.getElementById('increase-speed');
+        const speedValue = document.getElementById('speed-value');
+
+        let speed = 2;  // Initial speed value
+
+        function updateSpeed(newSpeed) {
+            speed = Math.max(1, Math.min(10, newSpeed));  // Limit speed between 1 and 10
+            speedValue.textContent = speed;
+
+            // Send the updated speed to the server
+            fetch('/update_speed', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ speed: speed }),
+            })
+            .then(response => response.json())
+            .then(data => console.log('Speed updated:', data))
+            .catch((error) => console.error('Error:', error));
+        }
+
+        decreaseButton.addEventListener('click', () => {
+            updateSpeed(speed - 1);
+        });
+
+        increaseButton.addEventListener('click', () => {
+            updateSpeed(speed + 1);
+        });
+
+        // Fetch the initial speed value from the server
+        fetch('/get_speed')
+            .then(response => response.json())
+            .then(data => {
+                speed = data.speed;
+                speedValue.textContent = speed;
+            })
+            .catch((error) => console.error('Error:', error));
+    </script>
+</body>
+</html>
