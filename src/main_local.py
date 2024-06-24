@@ -93,4 +93,10 @@ def main():
         rate.sleep()
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except serial.SerialException as e:
+        rospy.logerr(f"Serial communication error: {e}")
+    except KeyboardInterrupt:
+        rospy.loginfo("Program terminated by the user.")
+        motion_controller.stop()  # Stop the AMR when the program is interrupted
