@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        .game-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            padding: 20px;
+        }
+        #map {
+            width: 100%;
+            max-width: 480px;
+            aspect-ratio: 16 / 9;
+            border: 1px solid black;
+            position: relative;
+        }
+        #robot {
+            width: 20px;
+            height: 20px;
+            position: absolute;
+            transition: transform 0.1s linear, left 0.1s linear, top 0.1s linear;
+            font-size: 20px;
+            line-height: 20px;
+            text-align: center;
+            color: red;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar bg-body-tertiary">
+        <div class="container-fluid d-flex">
+            <a href="/" class="btn btn-outline-primary me-auto">Main</a>
+            <div class="d-flex justify-content-end">
+                <a href="map.html" class="btn btn-outline-primary me-2">Map</a>
+                <a href="telemetry.html" class="btn btn-outline-primary me-2">Telemetry</a>
+                <a href="manual.html" class="btn btn-outline-primary me-2">Manual</a>
+                <a href="parameter.html" class="btn btn-outline-primary">Parameter</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="game-container">
+        <div id="map">
+            <div id="robot">A</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function updateRobotPosition() {
+            fetch('/get_control')
+                .then(response => response.json())
+                .then(data => {
+                    const robot = document.getElementById('robot');
+                    const map = document.getElementById('map');
+                    const scaleX = map.clientWidth / 480;
+                    const scaleY = map.clientHeight / 270;
+                    
+                    robot.style.left = `${data.x * scaleX}px`;
+                    robot.style.top = `${data.y * scaleY}px`;
+                    
+                    let rotation = data.rotation % 360;
+                    if (rotation < 0) rotation += 360;
+                    
+                    robot.style.transform = `rotate(${rotation}deg)`;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Update robot position every 50ms for smoother movement
+        setInterval(updateRobotPosition, 50);
+
+        // Recalculate robot position on window resize
+        window.addEventListener('resize', updateRobotPosition);
+    </script>
+</body>
+</html>
