@@ -5,39 +5,50 @@ from datetime import datetime
 import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///control.db'
+
+# Configure the SQLite database
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'robot.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize the database
 db = SQLAlchemy(app)
 
+# Define the database models
 class RobotState(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    x = db.Column(db.Float, nullable=False)
-    y = db.Column(db.Float, nullable=False)
-    rotation = db.Column(db.Float, nullable=False)
+    x = db.Column(db.Float)
+    y = db.Column(db.Float)
+    orientation = db.Column(db.Float)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 class MovementHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    action = db.Column(db.String(20), nullable=False)
-    direction = db.Column(db.String(20), nullable=False)
-    x = db.Column(db.Float, nullable=False)
-    y = db.Column(db.Float, nullable=False)
-    rotation = db.Column(db.Float, nullable=False)
+    action = db.Column(db.String(20))
+    direction = db.Column(db.String(20))
+    x = db.Column(db.Float)
+    y = db.Column(db.Float)
+    orientation = db.Column(db.Float)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-def create_database():
-    if not os.path.exists('control.db'):
-        with app.app_context():
-            db.create_all()
-        print("Database created.")
+def get_latest_robot_state():
+    with app.app_context():
+        latest_state = RobotState.query.order_by(RobotState.timestamp.desc()).first()
+        if latest_state:
+            return {
+                'x': latest_state.x,
+                'y': latest_state.y,
+                'orientation': latest_state.orientation
+            }
+    return {'x': 0, 'y': 0, 'orientation': 0}
 
-create_database()
+def init_db_and_state():
+    with app.app_context():
+        db.create_all()
+    return get_latest_robot_state()
 
-robot_state = {
-    'x': 240,
-    'y': 135,
-    'rotation': 0
-}
+# Initialize robot state
+robot_state = init_db_and_state()
 
 @app.route('/')
 def index():
@@ -59,13 +70,79 @@ def manual_page():
 def parameter_page():
     return render_template('parameter.html')
 
+@app.route('/get_position')
+def get_position():
+    with app.app_context():
+        # Get the two most recent entries
+        recent_states = RobotState.query.order_by(RobotState.timestamp.desc()).limit(2).all()
+        
+        if len(recent_states) < 2:
+            return jsonify({'error': 'Not enough data points'}), 400
+        
+        current_state = recent_states[0]
+        prev_state = recent_states[1]
+        
+        x = current_state.x - prev_state.x
+        y = current_state.y - prev_state.y
+        orientation = current_state.orientation - prev_state.orientation
+        
+        # Normalize orientation to be between -180 and 180 degrees
+        orientation = (orientation + 180) % 360 - 180
+    
+    # Here you would typically send x, y, and orientation to Arduino
+    # For now, we'll just return the values as JSON
+    return jsonify({'x': x, 'y': y, 'orientation': orientation})
+
+@app.route('/control_amr', methods=['POST'])
+def control_amr():
+    data = request.json
+    button = data.get('button')
+    
+    # Base template for mecanum wheel speeds
+    base_speed = 500
+    speeds = [0, 0, 0, 0]  # [front_left, front_right, rear_left, rear_right]
+    
+    if button == 1:  # Diag fwd l
+        speeds = [-base_speed, base_speed, base_speed, -base_speed]
+    elif button == 2:  # Forward
+        speeds = [-base_speed, base_speed, -base_speed, base_speed]
+    elif button == 3:  # Diag fwd r
+        speeds = [base_speed, -base_speed, -base_speed, base_speed]
+    elif button == 4:  # Left
+        speeds = [-base_speed, -base_speed, base_speed, base_speed]
+    elif button == 5:  # Stop
+        speeds = [0, 0, 0, 0]
+    elif button == 6:  # Right
+        speeds = [base_speed, base_speed, -base_speed, -base_speed]
+    elif button == 7:  # Diag rev l
+        speeds = [base_speed, -base_speed, -base_speed, base_speed]
+    elif button == 8:  # Reverse
+        speeds = [base_speed, -base_speed, base_speed, -base_speed]
+    elif button == 9:  # Diag rev r
+        speeds = [-base_speed, base_speed, base_speed, -base_speed]
+    elif button == 10:  # CCW
+        speeds = [-base_speed, -base_speed, -base_speed, -base_speed]
+    elif button == 11:  # CW
+        speeds = [base_speed, base_speed, base_speed, base_speed]
+    else:
+        return jsonify({'error': 'Invalid button'}), 400
+    
+    # Here you would typically send the speeds to your Arduino or motor controller
+    # For now, we'll just return the speeds as JSON
+    return jsonify({
+        'front_left': speeds[0],
+        'front_right': speeds[1],
+        'rear_left': speeds[2],
+        'rear_right': speeds[3]
+    })
+
 @app.route('/update_control', methods=['POST'])
 def update_control():
     data = request.json
     global robot_state
 
     speed = 5
-    angle = math.radians(robot_state['rotation'])
+    angle = math.radians(robot_state['orientation'])
     
     if data['action'] == 'move':
         if data['direction'] == 'forward':
@@ -94,23 +171,24 @@ def update_control():
             robot_state['y'] += speed * 0.7071 * (math.cos(angle) + math.sin(angle))
     elif data['action'] == 'rotate':
         if data['direction'] == 'cw':
-            robot_state['rotation'] += 5
+            robot_state['orientation'] += 5
         elif data['direction'] == 'ccw':
-            robot_state['rotation'] -= 5
-        robot_state['rotation'] = robot_state['rotation'] % 360
+            robot_state['orientation'] -= 5
+        robot_state['orientation'] = robot_state['orientation'] % 360
 
-    # Update the database
-    new_state = RobotState(x=robot_state['x'], y=robot_state['y'], rotation=robot_state['rotation'])
-    new_movement = MovementHistory(
-        action=data['action'],
-        direction=data['direction'],
-        x=robot_state['x'],
-        y=robot_state['y'],
-        rotation=robot_state['rotation']
-    )
-    db.session.add(new_state)
-    db.session.add(new_movement)
-    db.session.commit()
+    with app.app_context():
+        # Update the database
+        new_state = RobotState(x=robot_state['x'], y=robot_state['y'], orientation=robot_state['orientation'])
+        new_movement = MovementHistory(
+            action=data['action'],
+            direction=data['direction'],
+            x=robot_state['x'],
+            y=robot_state['y'],
+            orientation=robot_state['orientation']
+        )
+        db.session.add(new_state)
+        db.session.add(new_movement)
+        db.session.commit()
 
     print("Updated robot state:", robot_state)
     return jsonify(robot_state)
@@ -119,20 +197,6 @@ def update_control():
 def get_control():
     print("Current robot state:", robot_state)
     return jsonify(robot_state)
-
-@app.route('/get_movement_history')
-def get_movement_history():
-    history = MovementHistory.query.order_by(MovementHistory.timestamp.desc()).limit(10).all()
-    return jsonify([
-        {
-            'action': h.action,
-            'direction': h.direction,
-            'x': h.x,
-            'y': h.y,
-            'rotation': h.rotation,
-            'timestamp': h.timestamp.isoformat()
-        } for h in history
-    ])
 
 if __name__ == '__main__':
     app.run(debug=True)
