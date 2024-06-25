@@ -8,7 +8,7 @@ import time
 import atexit
 
 # Initialize serial connection (you might need to adjust the port)
-ser = serial.Serial('/dev/ttyACM1', 9600, timeout=1)
+ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
 time.sleep(2)  # Wait for the serial connection to initialize
 
 
