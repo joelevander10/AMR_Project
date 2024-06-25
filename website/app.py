@@ -235,4 +235,4 @@ def get_control():
     return jsonify(robot_state)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0')
