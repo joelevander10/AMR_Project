@@ -147,8 +147,13 @@ def control_amr():
     run_duration = "1000"  # 1 second, adjust as needed
     
     # Prepare the command string
-    command = " ".join(speed_strings) + "\n"
-    
+    #command = " ".join(speed_strings) + "\n"
+    fl = speeds[0]
+    bl = speeds[1]
+    fr = speeds[2]
+    br = speeds[3]
+    command = f"{fl} {bl} {fr} {br}\n"
+    print(command)
     # Send the command to Arduino
     ser.write(command.encode())
     
