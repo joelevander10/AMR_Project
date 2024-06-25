@@ -45,11 +45,9 @@
             background-color: #d8b5ff;
             border: none;
             cursor: pointer;
-            opacity: 1;
-            transition: background-color 0.1s ease-in-out, opacity 0.1s ease-in-out;
+            transition: opacity 0.1s ease;
         }
-        .btn-control:active {
-            background-color: #b388ff;
+        .btn-control.active {
             opacity: 0.5;
         }
         .orientation-controls {
@@ -70,18 +68,6 @@
         }
         .sub-title {
             font-size: 36px;
-        }
-        #movement-history {
-            margin-top: 20px;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        #history-list {
-            max-height: 200px;
-            overflow-y: auto;
-            padding-left: 20px;
         }
     </style>
 </head>
@@ -106,45 +92,51 @@
     <div class="game-container">
         <div class="controls-wrapper">
             <div class="controls">
-                <button class="btn btn-control" data-direction="diagFwdL">↖️<br>Diag Fwd L</button>
-                <button class="btn btn-control" data-direction="forward">⬆️<br>Forward</button>
-                <button class="btn btn-control" data-direction="diagFwdR">↗️<br>Diag Fwd R</button>
-                <button class="btn btn-control" data-direction="left">⬅️<br>Left</button>
-                <button class="btn btn-control" data-direction="stop">⏹️<br>Stop</button>
-                <button class="btn btn-control" data-direction="right">➡️<br>Right</button>
-                <button class="btn btn-control" data-direction="diagRevL">↙️<br>Diag Rev L</button>
-                <button class="btn btn-control" data-direction="reverse">⬇️<br>Reverse</button>
-                <button class="btn btn-control" data-direction="diagRevR">↘️<br>Diag Rev R</button>
+                <button class="btn-control" data-direction="diagFwdL">↖️<br>Diag Fwd L</button>
+                <button class="btn-control" data-direction="forward">⬆️<br>Forward</button>
+                <button class="btn-control" data-direction="diagFwdR">↗️<br>Diag Fwd R</button>
+                <button class="btn-control" data-direction="left">⬅️<br>Left</button>
+                <button class="btn-control" data-direction="stop">⏹️<br>Stop</button>
+                <button class="btn-control" data-direction="right">➡️<br>Right</button>
+                <button class="btn-control" data-direction="diagRevL">↙️<br>Diag Rev L</button>
+                <button class="btn-control" data-direction="reverse">⬇️<br>Reverse</button>
+                <button class="btn-control" data-direction="diagRevR">↘️<br>Diag Rev R</button>
             </div>
             <div class="orientation-controls">
-                <button class="btn btn-control" data-direction="ccw">⟲<br>CCW</button>
-                <button class="btn btn-control" data-direction="cw">⟳<br>CW</button>
+                <button class="btn-control" data-direction="ccw">⟲<br>CCW</button>
+                <button class="btn-control" data-direction="cw">⟳<br>CW</button>
             </div>
         </div>
-    </div>
-
-    <div id="movement-history" class="container">
-        <h3>Movement History</h3>
-        <ul id="history-list"></ul>
     </div>
 
     <script>
         let moveInterval;
         let currentDirection = null;
+        let gamepadInterval;
+        let pressStartTime;
+        let inputLog = [];
 
-        function startMove(direction) {
+        function startMove(direction, button) {
             if (currentDirection !== direction) {
                 stopMove();
                 currentDirection = direction;
                 move(direction);
                 moveInterval = setInterval(() => move(direction), 100);
             }
+            button.classList.add('active');
+            pressStartTime = new Date();
+            logInput('start', direction);
         }
 
-        function stopMove() {
+        function stopMove(button) {
             clearInterval(moveInterval);
+            if (currentDirection) {
+                logInput('stop', currentDirection);
+            }
             currentDirection = null;
-            updateMovementHistory();
+            if (button) {
+                button.classList.remove('active');
+            }
         }
 
         function move(direction) {
@@ -163,33 +155,95 @@
             .catch((error) => console.error('Error:', error));
         }
 
-        function updateMovementHistory() {
-            fetch('/get_movement_history')
-                .then(response => response.json())
-                .then(data => {
-                    const historyList = document.getElementById('history-list');
-                    historyList.innerHTML = '';
-                    data.forEach(item => {
-                        const li = document.createElement('li');
-                        li.textContent = `${item.action} ${item.direction} at (${item.x.toFixed(2)}, ${item.y.toFixed(2)}) rotation: ${item.rotation.toFixed(2)}° - ${new Date(item.timestamp).toLocaleString()}`;
-                        historyList.appendChild(li);
-                    });
-                })
-                .catch(error => console.error('Error:', error));
+        function logInput(action, direction) {
+            const now = new Date();
+            const duration = action === 'stop' ? now - pressStartTime : 0;
+            inputLog.push({
+                timestamp: now.toISOString(),
+                action: action,
+                direction: direction,
+                duration: duration
+            });
+            console.log(`Input: ${action} ${direction}, Duration: ${duration}ms`);
+            console.log('Full log:', inputLog);
         }
 
         // Set up event listeners for all control buttons
         document.querySelectorAll('.btn-control').forEach(button => {
-            button.addEventListener('mousedown', () => startMove(button.dataset.direction));
-            button.addEventListener('mouseup', stopMove);
-            button.addEventListener('mouseleave', stopMove);
+            button.addEventListener('mousedown', () => startMove(button.dataset.direction, button));
+            button.addEventListener('mouseup', () => stopMove(button));
+            button.addEventListener('mouseleave', () => stopMove(button));
         });
 
-        // Update movement history every 5 seconds
-        setInterval(updateMovementHistory, 5000);
+        // Xbox controller support
+        function handleGamepad() {
+            const gamepads = navigator.getGamepads();
+            if (gamepads[0]) {
+                const gamepad = gamepads[0];
+                
+                // Left analog stick
+                const leftX = gamepad.axes[0];
+                const leftY = gamepad.axes[1];
+                
+                // Right analog stick
+                const rightX = gamepad.axes[2];
+                
+                // Deadzone
+                const deadzone = 0.1;
+                
+                let direction = null;
+                
+                if (Math.abs(leftY) > deadzone || Math.abs(leftX) > deadzone) {
+                    if (leftY < -deadzone && Math.abs(leftX) < deadzone) {
+                        direction = 'forward';
+                    } else if (leftY > deadzone && Math.abs(leftX) < deadzone) {
+                        direction = 'reverse';
+                    } else if (leftX < -deadzone && Math.abs(leftY) < deadzone) {
+                        direction = 'left';
+                    } else if (leftX > deadzone && Math.abs(leftY) < deadzone) {
+                        direction = 'right';
+                    } else if (leftY < -deadzone && leftX < -deadzone) {
+                        direction = 'diagFwdL';
+                    } else if (leftY < -deadzone && leftX > deadzone) {
+                        direction = 'diagFwdR';
+                    } else if (leftY > deadzone && leftX < -deadzone) {
+                        direction = 'diagRevL';
+                    } else if (leftY > deadzone && leftX > deadzone) {
+                        direction = 'diagRevR';
+                    }
+                } else if (Math.abs(rightX) > deadzone) {
+                    if (rightX < -deadzone) {
+                        direction = 'ccw';
+                    } else if (rightX > deadzone) {
+                        direction = 'cw';
+                    }
+                }
+                
+                if (direction && direction !== currentDirection) {
+                    startMove(direction, document.querySelector(`[data-direction="${direction}"]`));
+                } else if (!direction && currentDirection) {
+                    stopMove(document.querySelector(`[data-direction="${currentDirection}"]`));
+                }
+            }
+        }
 
-        // Initial update of movement history
-        updateMovementHistory();
+        function startGamepadPolling() {
+            gamepadInterval = setInterval(handleGamepad, 50);
+        }
+
+        function stopGamepadPolling() {
+            clearInterval(gamepadInterval);
+        }
+
+        window.addEventListener("gamepadconnected", (event) => {
+            console.log("Gamepad connected:", event.gamepad);
+            startGamepadPolling();
+        });
+
+        window.addEventListener("gamepaddisconnected", (event) => {
+            console.log("Gamepad disconnected:", event.gamepad);
+            stopGamepadPolling();
+        });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
