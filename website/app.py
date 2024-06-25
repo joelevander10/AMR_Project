@@ -3,6 +3,14 @@ from flask_sqlalchemy import SQLAlchemy
 import math
 from datetime import datetime
 import os
+import serial
+import time
+import atexit
+
+# Initialize serial connection (you might need to adjust the port)
+ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+time.sleep(2)  # Wait for the serial connection to initialize
+
 
 app = Flask(__name__)
 
@@ -93,6 +101,13 @@ def get_position():
     # For now, we'll just return the values as JSON
     return jsonify({'x': x, 'y': y, 'orientation': orientation})
 
+def calculate_movement(sent_speeds, received_speeds):
+    movement = []
+    for sent, received in zip(sent_speeds, received_speeds):
+        move = abs(int(sent) - int(received))
+        movement.append(move)
+    return movement
+
 @app.route('/control_amr', methods=['POST'])
 def control_amr():
     data = request.json
@@ -127,14 +142,35 @@ def control_amr():
     else:
         return jsonify({'error': 'Invalid button'}), 400
     
-    # Here you would typically send the speeds to your Arduino or motor controller
-    # For now, we'll just return the speeds as JSON
-    return jsonify({
-        'front_left': speeds[0],
-        'front_right': speeds[1],
-        'rear_left': speeds[2],
-        'rear_right': speeds[3]
-    })
+    # Convert speeds to strings and add a default run duration (e.g., 1000 ms)
+    speed_strings = [str(speed) for speed in speeds]
+    run_duration = "1000"  # 1 second, adjust as needed
+    
+    # Prepare the command string
+    command = " ".join(speed_strings) + "\n"
+    
+    # Send the command to Arduino
+    ser.write(command.encode())
+    
+    # Wait for acknowledgment and speed values from Arduino
+    while True:
+        if ser.in_waiting > 0:
+            response = ser.readline().decode().strip()
+            if response.startswith("SPEEDS "):
+                received_speeds = response.split()[1:]
+                move = calculate_movement(speed_strings, received_speeds)
+                return jsonify({
+                    'sent_speeds': speeds,
+                    'received_speeds': [int(speed) for speed in received_speeds],
+                    'movement': move
+                })
+            elif response == "ERROR":
+                return jsonify({'error': 'Arduino detected invalid speed values'}), 400
+            else:
+                return jsonify({'error': 'Unknown response from Arduino'}), 500
+    
+    # If we reach here, there was no response from Arduino
+    return jsonify({'error': 'No response from Arduino'}), 500
 
 @app.route('/update_control', methods=['POST'])
 def update_control():
