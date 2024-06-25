@@ -92,19 +92,19 @@
     <div class="game-container">
         <div class="controls-wrapper">
             <div class="controls">
-                <button class="btn-control" data-direction="diagFwdL">↖️<br>Diag Fwd L</button>
-                <button class="btn-control" data-direction="forward">⬆️<br>Forward</button>
-                <button class="btn-control" data-direction="diagFwdR">↗️<br>Diag Fwd R</button>
-                <button class="btn-control" data-direction="left">⬅️<br>Left</button>
-                <button class="btn-control" data-direction="stop">⏹️<br>Stop</button>
-                <button class="btn-control" data-direction="right">➡️<br>Right</button>
-                <button class="btn-control" data-direction="diagRevL">↙️<br>Diag Rev L</button>
-                <button class="btn-control" data-direction="reverse">⬇️<br>Reverse</button>
-                <button class="btn-control" data-direction="diagRevR">↘️<br>Diag Rev R</button>
+                <button class="btn-control" data-direction="diagFwdL" data-number="1">1<br>↖️<br>Diag Fwd L</button>
+                <button class="btn-control" data-direction="forward" data-number="2">2<br>⬆️<br>Forward</button>
+                <button class="btn-control" data-direction="diagFwdR" data-number="3">3<br>↗️<br>Diag Fwd R</button>
+                <button class="btn-control" data-direction="left" data-number="4">4<br>⬅️<br>Left</button>
+                <button class="btn-control" data-direction="stop" data-number="5">5<br>⏹️<br>Stop</button>
+                <button class="btn-control" data-direction="right" data-number="6">6<br>➡️<br>Right</button>
+                <button class="btn-control" data-direction="diagRevL" data-number="7">7<br>↙️<br>Diag Rev L</button>
+                <button class="btn-control" data-direction="reverse" data-number="8">8<br>⬇️<br>Reverse</button>
+                <button class="btn-control" data-direction="diagRevR" data-number="9">9<br>↘️<br>Diag Rev R</button>
             </div>
             <div class="orientation-controls">
-                <button class="btn-control" data-direction="ccw">⟲<br>CCW</button>
-                <button class="btn-control" data-direction="cw">⟳<br>CW</button>
+                <button class="btn-control" data-direction="ccw" data-number="10">10<br>⟲<br>CCW</button>
+                <button class="btn-control" data-direction="cw" data-number="11">11<br>⟳<br>CW</button>
             </div>
         </div>
     </div>
@@ -116,18 +116,33 @@
         let pressStartTime;
         let inputLog = [];
 
+        function move(direction, number) {
+            const action = ['ccw', 'cw'].includes(direction) ? 'rotate' : 'move';
+            fetch('/control_amr', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({button: number}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => console.error('Error:', error));
+        }
+
         function startMove(direction, button) {
             if (currentDirection !== direction) {
                 stopMove();
                 currentDirection = direction;
-                move(direction);
-                moveInterval = setInterval(() => move(direction), 100);
+                move(direction, parseInt(button.dataset.number));
+                moveInterval = setInterval(() => move(direction, parseInt(button.dataset.number)), 100);
             }
             button.classList.add('active');
             pressStartTime = new Date();
             logInput('start', direction);
         }
-
         function stopMove(button) {
             clearInterval(moveInterval);
             if (currentDirection) {
@@ -137,22 +152,6 @@
             if (button) {
                 button.classList.remove('active');
             }
-        }
-
-        function move(direction) {
-            const action = ['ccw', 'cw'].includes(direction) ? 'rotate' : 'move';
-            fetch('/update_control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({action: action, direction: direction}),
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-            })
-            .catch((error) => console.error('Error:', error));
         }
 
         function logInput(action, direction) {
