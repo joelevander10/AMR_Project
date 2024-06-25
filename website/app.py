@@ -117,27 +117,27 @@ def control_amr():
     base_speed = 500
     speeds = [0, 0, 0, 0]  # [front_left, front_right, rear_left, rear_right]
     
-    if button == 1:  # Diag fwd l
+    if button == 2:  # Forward 
         speeds = [-base_speed, base_speed, base_speed, -base_speed]
-    elif button == 2:  # Forward
-        speeds = [-base_speed, base_speed, -base_speed, base_speed]
-    elif button == 3:  # Diag fwd r
+    elif button == 8:  # Backward
         speeds = [base_speed, -base_speed, -base_speed, base_speed]
     elif button == 4:  # Left
+        speeds = [base_speed, base_speed, -base_speed, -base_speed]
+    elif button == 6:  # Right
         speeds = [-base_speed, -base_speed, base_speed, base_speed]
     elif button == 5:  # Stop
         speeds = [0, 0, 0, 0]
-    elif button == 6:  # Right
-        speeds = [base_speed, base_speed, -base_speed, -base_speed]
+    elif button == 3:  # Diag FWD R
+        speeds = [-base_speed, base_speed/base_speed, base_speed, base_speed/base_speed]
     elif button == 7:  # Diag rev l
-        speeds = [base_speed, -base_speed, -base_speed, base_speed]
-    elif button == 8:  # Reverse
-        speeds = [base_speed, -base_speed, base_speed, -base_speed]
+        speeds = [base_speed, base_speed/base_speed, -base_speed, base_speed/base_speed]
+    elif button == 1:  # Diag FWD L
+        speeds = [base_speed/base_speed, base_speed, base_speed/base_speed, -base_speed]
     elif button == 9:  # Diag rev r
-        speeds = [-base_speed, base_speed, base_speed, -base_speed]
-    elif button == 10:  # CCW
-        speeds = [-base_speed, -base_speed, -base_speed, -base_speed]
+        speeds = [base_speed/base_speed, -base_speed, base_speed/base_speed, base_speed]
     elif button == 11:  # CW
+        speeds = [-base_speed, -base_speed, -base_speed, -base_speed]
+    elif button == 10:  # CCW
         speeds = [base_speed, base_speed, base_speed, base_speed]
     else:
         return jsonify({'error': 'Invalid button'}), 400
