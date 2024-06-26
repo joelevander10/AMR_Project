@@ -144,7 +144,7 @@ def control_amr():
     
     # Convert speeds to strings and add a default run duration (e.g., 1000 ms)
     speed_strings = [str(speed) for speed in speeds]
-    run_duration = "500"  # 1 second, adjust as needed
+    run_duration = "100"  # 1 second, adjust as needed
     
     # Prepare the command string
     #command = " ".join(speed_strings) + "\n"
