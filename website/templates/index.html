@@ -112,7 +112,6 @@
     <script>
         let moveInterval;
         let currentDirection = null;
-        let gamepadInterval;
         let pressStartTime;
         let inputLog = [];
 
@@ -143,6 +142,7 @@
             pressStartTime = new Date();
             logInput('start', direction);
         }
+
         function stopMove(button) {
             clearInterval(moveInterval);
             if (currentDirection) {
@@ -172,76 +172,6 @@
             button.addEventListener('mousedown', () => startMove(button.dataset.direction, button));
             button.addEventListener('mouseup', () => stopMove(button));
             button.addEventListener('mouseleave', () => stopMove(button));
-        });
-
-        // Xbox controller support
-        function handleGamepad() {
-            const gamepads = navigator.getGamepads();
-            if (gamepads[0]) {
-                const gamepad = gamepads[0];
-                
-                // Left analog stick
-                const leftX = gamepad.axes[0];
-                const leftY = gamepad.axes[1];
-                
-                // Right analog stick
-                const rightX = gamepad.axes[2];
-                
-                // Deadzone
-                const deadzone = 0.1;
-                
-                let direction = null;
-                
-                if (Math.abs(leftY) > deadzone || Math.abs(leftX) > deadzone) {
-                    if (leftY < -deadzone && Math.abs(leftX) < deadzone) {
-                        direction = 'forward';
-                    } else if (leftY > deadzone && Math.abs(leftX) < deadzone) {
-                        direction = 'reverse';
-                    } else if (leftX < -deadzone && Math.abs(leftY) < deadzone) {
-                        direction = 'left';
-                    } else if (leftX > deadzone && Math.abs(leftY) < deadzone) {
-                        direction = 'right';
-                    } else if (leftY < -deadzone && leftX < -deadzone) {
-                        direction = 'diagFwdL';
-                    } else if (leftY < -deadzone && leftX > deadzone) {
-                        direction = 'diagFwdR';
-                    } else if (leftY > deadzone && leftX < -deadzone) {
-                        direction = 'diagRevL';
-                    } else if (leftY > deadzone && leftX > deadzone) {
-                        direction = 'diagRevR';
-                    }
-                } else if (Math.abs(rightX) > deadzone) {
-                    if (rightX < -deadzone) {
-                        direction = 'ccw';
-                    } else if (rightX > deadzone) {
-                        direction = 'cw';
-                    }
-                }
-                
-                if (direction && direction !== currentDirection) {
-                    startMove(direction, document.querySelector(`[data-direction="${direction}"]`));
-                } else if (!direction && currentDirection) {
-                    stopMove(document.querySelector(`[data-direction="${currentDirection}"]`));
-                }
-            }
-        }
-
-        function startGamepadPolling() {
-            gamepadInterval = setInterval(handleGamepad, 50);
-        }
-
-        function stopGamepadPolling() {
-            clearInterval(gamepadInterval);
-        }
-
-        window.addEventListener("gamepadconnected", (event) => {
-            console.log("Gamepad connected:", event.gamepad);
-            startGamepadPolling();
-        });
-
-        window.addEventListener("gamepaddisconnected", (event) => {
-            console.log("Gamepad disconnected:", event.gamepad);
-            stopGamepadPolling();
         });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
