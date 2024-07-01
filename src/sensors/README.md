@@ -33,7 +33,10 @@ Konfigurasikan repositori Ubuntu Anda untuk mengizinkan "terbatas", "semesta", d
 
 ## Download ROS Driver
 - git clone -b C32_V4.0 https://github.com/Lslidar/Lslidar_ROS1_driver.git
-
+- git clone https://github.com/dheera/ros-imu-bno055.git
+- cd /home/amr-project/roskin_ws/src/ros-imu-bno055
+- mv CMakeLists.ros2.txt CMakeLists.txt
+  
 ## Compile and package
 - cd ~/catkin_ws
 - catkin_make
@@ -41,6 +44,7 @@ Konfigurasikan repositori Ubuntu Anda untuk mengizinkan "terbatas", "semesta", d
 ## Jalankan Program
 - source devel/setup.bash
 - roslaunch lslidar_cx_driver lslidar_cx.launch
+- roslaunch imu_bno055 imu.launch
   
 # 3. Mengambil data 3D Lidar dari ROS ke Python
 - source /opt/ros/noetic/setup.bash
