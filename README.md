@@ -1,4 +1,4 @@
-# LSLidar-C16-ROS for Linux
+# AMR With Jetson Nano
 
 # 1. Instalasi ROS
 ## Configure your Ubuntu repositories
