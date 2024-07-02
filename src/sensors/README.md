@@ -30,16 +30,29 @@ Konfigurasikan repositori Ubuntu Anda untuk mengizinkan "terbatas", "semesta", d
 ## Membangun ruang kerja dan membangun lingkungan kompilasi
 - mkdir -p ~/catkin_ws/src
 - cd ~/catkin_ws/src
+- catkin_create_pkg lidar_imu_ros rospy sensor_msgs geometry_msgs
+- cd ~/catkin_ws/src/lidar_imu_ros
+- mkdir scripts
 
 ## Download ROS Driver
 - git clone -b C32_V4.0 https://github.com/Lslidar/Lslidar_ROS1_driver.git
 - git clone https://github.com/dheera/ros-imu-bno055.git
 - cd /home/amr-project/roskin_ws/src/ros-imu-bno055
 - mv CMakeLists.ros2.txt CMakeLists.txt
-  
+
+## Tambahkan dependensi yang diperlukan di file CMakeLists.txt di dalam package lidar_imu_ros.
+Tambahkan baris berikut di file CMakeLists.txt:
+```
+catkin_package(
+  CATKIN_DEPENDS rospy sensor_msgs geometry_msgs
+)
+```
+
 ## Compile and package
 - cd ~/catkin_ws
 - catkin_make
+- cd ~/catkin_ws/src/lidar_imu_ros/scripts
+- chmod +x imu_node.py lidar_imu_listener.py
 
 ## Jalankan Program
 - source devel/setup.bash
@@ -47,6 +60,8 @@ Konfigurasikan repositori Ubuntu Anda untuk mengizinkan "terbatas", "semesta", d
 - sudo ip addr add 192.168.1.102 dev eth0
 - roslaunch lslidar_cx_driver lslidar_cx.launch
 - roslaunch imu_bno055 imu.launch
+- rosrun lidar_imu_ros imu_node.py
+- rosrun lidar_imu_ros lidar_imu_listener.py
   
 # 3. Mengambil data 3D Lidar dari ROS ke Python
 - source /opt/ros/noetic/setup.bash
