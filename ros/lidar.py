@@ -7,7 +7,7 @@ import random
 
 min_time_threshold = 0.01
 velocity_threshold = 0.3
-moving_average_window = 2
+moving_average_window = 5  # Meningkatkan window untuk smoothing yang lebih baik
 
 previous_centroid = None
 previous_time = None
