@@ -5,7 +5,7 @@ import time
 import math
 
 min_time_threshold = 0.01
-velocity_threshold = 0.23
+velocity_threshold = 0.3
 moving_average_window = 2
 
 previous_centroid = None
@@ -16,6 +16,8 @@ def lidar_callback(data, sensor_data):
     global previous_centroid, previous_time, velocity_history
     
     points = list(pc2.read_points(data, field_names=("x", "y", "z"), skip_nans=True))
+    # Simpan point cloud ke sensor_data
+    sensor_data.point_cloud = points
     
     if is_lidar_stationary(points):
         velocity_history = []
