@@ -3,6 +3,7 @@ from sensor_msgs.msg import PointCloud2
 import sensor_msgs.point_cloud2 as pc2
 import time
 import math
+import random
 
 min_time_threshold = 0.01
 velocity_threshold = 0.3
@@ -15,7 +16,12 @@ velocity_history = []
 def lidar_callback(data, sensor_data):
     global previous_centroid, previous_time, velocity_history
     
-    points = list(pc2.read_points(data, field_names=("x", "y", "z"), skip_nans=True))
+    all_points = list(pc2.read_points(data, field_names=("x", "y", "z"), skip_nans=True))
+    
+    # Ambil sampel titik-titik LiDAR
+    num_samples = 100  # Jumlah titik yang akan diambil
+    points = random.sample(all_points, min(num_samples, len(all_points)))
+    
     # Simpan point cloud ke sensor_data
     sensor_data.point_cloud = points
     
@@ -24,14 +30,14 @@ def lidar_callback(data, sensor_data):
         previous_centroid = None
         previous_time = None
         rospy.loginfo("LiDAR is stationary.")
-        sensor_data.velocity = 0.0  # Set default velocity to 0.0
+        sensor_data.velocity = 0.0
         return
     
     current_centroid = centroid(points)
     current_time = rospy.Time.now().to_sec()
     
     sensor_data.centroid = current_centroid
-    sensor_data.velocity = 0.0  # Set default velocity to 0.0
+    sensor_data.velocity = 0.0
     
     if previous_centroid is not None:
         dist = distance(current_centroid, previous_centroid)
@@ -40,7 +46,8 @@ def lidar_callback(data, sensor_data):
         if time_diff > min_time_threshold:
             velocity = dist / time_diff
             
-            if velocity < velocity_threshold:
+            # Tingkatkan threshold kecepatan
+            if velocity < velocity_threshold * 2:
                 velocity = 0.0
             
             velocity_history.append(velocity)
