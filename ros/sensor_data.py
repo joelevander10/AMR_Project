@@ -10,3 +10,5 @@ class SensorData:
         self.relative_orientation = None
         self.centroid = None
         self.velocity = None
+        self.imu_timestamp = None
+        self.point_cloud = None
