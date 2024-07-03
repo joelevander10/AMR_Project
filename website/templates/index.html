@@ -110,13 +110,12 @@
     </div>
 
     <script>
-        let moveInterval;
         let currentDirection = null;
         let pressStartTime;
         let inputLog = [];
+        let activeButton = null;
 
         function move(direction, number) {
-            const action = ['ccw', 'cw'].includes(direction) ? 'rotate' : 'move';
             fetch('/control_amr', {
                 method: 'POST',
                 headers: {
@@ -132,26 +131,27 @@
         }
 
         function startMove(direction, button) {
-            if (currentDirection !== direction) {
+            if (activeButton) {
                 stopMove();
-                currentDirection = direction;
-                move(direction, parseInt(button.dataset.number));
-                moveInterval = setInterval(() => move(direction, parseInt(button.dataset.number)), 100);
             }
+            currentDirection = direction;
+            activeButton = button;
+            move(direction, parseInt(button.dataset.number));
             button.classList.add('active');
             pressStartTime = new Date();
             logInput('start', direction);
         }
 
-        function stopMove(button) {
-            clearInterval(moveInterval);
+        function stopMove() {
             if (currentDirection) {
                 logInput('stop', currentDirection);
+                move('stop', 5); // Send stop command
+            }
+            if (activeButton) {
+                activeButton.classList.remove('active');
             }
             currentDirection = null;
-            if (button) {
-                button.classList.remove('active');
-            }
+            activeButton = null;
         }
 
         function logInput(action, direction) {
@@ -164,15 +164,26 @@
                 duration: duration
             });
             console.log(`Input: ${action} ${direction}, Duration: ${duration}ms`);
-            console.log('Full log:', inputLog);
         }
 
         // Set up event listeners for all control buttons
         document.querySelectorAll('.btn-control').forEach(button => {
-            button.addEventListener('mousedown', () => startMove(button.dataset.direction, button));
-            button.addEventListener('mouseup', () => stopMove(button));
-            button.addEventListener('mouseleave', () => stopMove(button));
+            button.addEventListener('mousedown', (e) => {
+                e.preventDefault(); // Prevent default behavior
+                if (button.dataset.direction === 'stop') {
+                    stopMove();
+                } else {
+                    startMove(button.dataset.direction, button);
+                }
+            });
         });
+
+        // Add these event listeners to the document to ensure we always catch the events
+        document.addEventListener('mouseup', stopMove);
+        document.addEventListener('mouseleave', stopMove);
+
+        // Prevent context menu on right-click
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
