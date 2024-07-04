@@ -3,65 +3,60 @@ from sensor_msgs.msg import PointCloud2
 import sensor_msgs.point_cloud2 as pc2
 import time
 import math
-import random
 
-min_time_threshold = 0.01
-velocity_threshold = 0.3
-moving_average_window = 5  # Meningkatkan window untuk smoothing yang lebih baik
-
+min_time_threshold = 0.001
+velocity_threshold_low = 0.2
+velocity_threshold_high = 0.3
+moving_average_window = 10
 previous_centroid = None
 previous_time = None
 velocity_history = []
 
+
 def lidar_callback(data, sensor_data):
     global previous_centroid, previous_time, velocity_history
-    
-    all_points = list(pc2.read_points(data, field_names=("x", "y", "z"), skip_nans=True))
-    
-    # Ambil sampel titik-titik LiDAR
-    num_samples = 100  # Jumlah titik yang akan diambil
-    points = random.sample(all_points, min(num_samples, len(all_points)))
+    points = list(pc2.read_points(data, field_names=("x", "y", "z"), skip_nans=True))
     
     # Simpan point cloud ke sensor_data
     sensor_data.point_cloud = points
     
-    if is_lidar_stationary(points):
-        velocity_history = []
-        previous_centroid = None
-        previous_time = None
-        rospy.loginfo("LiDAR is stationary.")
-        sensor_data.velocity = 0.0
-        return
-    
     current_centroid = centroid(points)
     current_time = rospy.Time.now().to_sec()
-    
     sensor_data.centroid = current_centroid
-    sensor_data.velocity = 0.0
     
-    if previous_centroid is not None:
-        dist = distance(current_centroid, previous_centroid)
-        time_diff = current_time - previous_time
-        
-        if time_diff > min_time_threshold:
-            velocity = dist / time_diff
-            
-            # Tingkatkan threshold kecepatan
-            if velocity < velocity_threshold * 2:
-                velocity = 0.0
-            
-            velocity_history.append(velocity)
-            
-            if len(velocity_history) == moving_average_window:
-                avg_velocity = moving_average(velocity_history)
-                sensor_data.velocity = avg_velocity
-                velocity_history = []
+    # Periksa apakah IMU mendeteksi percepatan atau pergerakan
+    if sensor_data.acceleration is not None:
+        accel_threshold = 0.2  # Sesuaikan ambang batas percepatan sesuai kebutuhan
+        print(sensor_data.acceleration)
+        if abs(sensor_data.acceleration[0]) > accel_threshold or \
+           abs(sensor_data.acceleration[1]) > accel_threshold:
+            # IMU mendeteksi percepatan, gunakan kecepatan dari LiDAR
+            if previous_centroid is not None:
+                dist = distance(current_centroid, previous_centroid)
+                time_diff = current_time - previous_time
+                if time_diff > min_time_threshold:
+                    velocity = dist / time_diff
+                    if velocity < velocity_threshold_low:
+                        velocity = 0.0
+                    elif velocity > velocity_threshold_high:
+                        velocity = velocity_threshold_high
+                    velocity_history.append(velocity)
+                    if len(velocity_history) > moving_average_window:
+                        velocity_history = velocity_history[-moving_average_window:]
+                    avg_velocity = sum(velocity_history) / len(velocity_history)
+                    sensor_data.velocity = avg_velocity
+                else:
+                    rospy.logwarn("Time difference too small. Skipping velocity calculation.")
         else:
-            rospy.logwarn("Time difference too small. Skipping velocity calculation.")
+            # IMU tidak mendeteksi percepatan, set kecepatan LiDAR menjadi 0
+            sensor_data.velocity = 0.0
+    else:
+        # Data IMU tidak tersedia, set kecepatan LiDAR menjadi 0
+        sensor_data.velocity = 0.0
     
     previous_centroid = current_centroid
     previous_time = current_time
-
+    
 def centroid(points):
     x_sum = y_sum = z_sum = 0
     for point in points:
