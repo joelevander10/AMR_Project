@@ -59,7 +59,6 @@ catkin_package(
 - sudo ip link set eth0 up
 - sudo ip addr add 192.168.1.102 dev eth0
 - roslaunch lslidar_cx_driver lslidar_cx.launch
-- roslaunch imu_bno055 imu.launch
 - rosrun lidar_imu_ros imu_node.py
 - mkdir lidar.py
 ```
