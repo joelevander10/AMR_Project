@@ -299,3 +299,19 @@ if __name__ == '__main__':
 # 3. Mengambil data 3D Lidar dari ROS ke Python
 - source /opt/ros/noetic/setup.bash
 - Untuk mengambil data xyz dari ROS, maka bisa gunakan kode python ROSLidar.py
+
+# 4. Cartographer SLAM
+- sudo apt-get update
+- sudo apt-get install -y python3-wstool python3-rosdep ninja-build stow
+- mkdir catkin_ws
+- cd catkin_ws
+- wstool init src
+- wstool merge -t src https://raw.githubusercontent.com/cartographer-project/cartographer_ros/master/cartographer_ros.rosinstall
+- wstool update -t src
+- sudo rosdep init
+- rosdep update
+- rosdep install --from-paths src --ignore-src --rosdistro=${ROS_DISTRO} -y
+- src/cartographer/scripts/install_abseil.sh
+- sudo apt-get remove ros-${ROS_DISTRO}-abseil-cpp
+- catkin_make_isolated --install --use-ninja
+- 
