@@ -19,29 +19,31 @@
             justify-content: center;
             align-items: center;
             flex-grow: 1;
-            padding: 20px;
+            padding: 10px;
         }
         .controls-wrapper {
             display: flex;
             flex-direction: column;
             align-items: center;
-            max-width: 100%;
+            width: 100%;
+            max-width: 300px;
         }
         .controls {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 5px;
+            margin-bottom: 5px;
+            width: 100%;
         }
         .btn-control {
             width: 100%;
             aspect-ratio: 1 / 1;
-            font-size: 12px;
+            font-size: 17.7px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 5px;
+            padding: 2px;
             background-color: #d8b5ff;
             border: none;
             cursor: pointer;
@@ -54,32 +56,132 @@
             display: flex;
             justify-content: center;
             width: 100%;
+            gap: 5px;
         }
         .orientation-controls .btn-control {
-            margin: 0 5px;
+            flex: 1;
         }
         .title-container {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 30px;
         }
         .main-title {
-            font-size: 42px;
+            font-size: 24px;
             font-weight: bold;
         }
         .sub-title {
-            font-size: 36px;
+            font-size: 18px;
         }
+        .scalable-btn {
+            font-size: 2vw; /* Base font size relative to viewport width */
+            padding: 0.5vw 1vw;
+            transition: transform 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .scalable-btn {
+                font-size: 3vw; /* Larger font size for smaller screens */
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .scalable-btn {
+                font-size: 1.5vw; /* Smaller font size for larger screens */
+            }
+        }
+
+        /* Apply scaling on hover or focus */
+        .scalable-btn:hover,
+        .scalable-btn:focus {
+            transform: scale(1.1);
+        }
+        .main-container {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+        }
+        .additional-controls {
+            width: 300px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .additional-controls h3 {
+            margin-bottom: 15px;
+        }
+        .additional-controls input,
+        .additional-controls button {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .sliding-panel {
+            position: fixed;
+            top: 150px; /* Menurunkan posisi panel */
+            right: -300px;
+            width: 300px;
+            height: calc(100% - 150px); /* Menyesuaikan tinggi */
+            background-color: #f8f9fa;
+            transition: right 0.3s ease-in-out;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .control-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .control-section:last-child {
+            border-bottom: none;
+        }
+
+        .control-section h4 {
+            margin-bottom: 15px;
+        }
+
+        .sliding-panel.open {
+            right: 0;
+        }
+
+        .panel-toggle {
+            position: fixed;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .sliding-panel h3 {
+            margin-bottom: 15px;
+        }
+
+        .sliding-panel input,
+        .sliding-panel button {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
     </style>
 </head>
 <body>
     <nav class="navbar bg-body-tertiary">
-        <div class="container-fluid d-flex justify-content-between">
-            <a href="/" class="btn btn-outline-primary">Home</a>
-            <div>
-                <a href="map.html" class="btn btn-outline-primary me-2">Map</a>
-                <a href="telemetry.html" class="btn btn-outline-primary me-2">Telemetry</a>
-                <a href="manual.html" class="btn btn-outline-primary me-2">Manual</a>
-                <a href="parameter.html" class="btn btn-outline-primary">Parameter</a>
+        <div class="container-fluid d-flex flex-wrap justify-content-between">
+            <a href="logout" class="btn btn-outline-primary mb-2 mb-sm-0 scalable-btn">Logout</a>
+            <div class="d-flex flex-wrap">
+                <a href="map.html" class="btn btn-outline-primary me-2 mb-2 mb-sm-0 scalable-btn">Map</a>
+                <a href="telemetry.html" class="btn btn-outline-primary me-2 mb-2 mb-sm-0 scalable-btn">Telemetry</a>
+                <a href="manual.html" class="btn btn-outline-primary me-2 mb-2 mb-sm-0 scalable-btn">Manual</a>
+                <a href="parameter.html" class="btn btn-outline-primary mb-2 mb-sm-0 scalable-btn">Parameter</a>
             </div>
         </div>
     </nav>
@@ -88,7 +190,7 @@
         <h1 class="main-title">RND Project</h1>
         <h2 class="sub-title">Autonomous Mobile Robot</h2>
     </div>
-
+    
     <div class="game-container">
         <div class="controls-wrapper">
             <div class="controls">
@@ -106,6 +208,29 @@
                 <button class="btn-control" data-direction="ccw" data-number="10">10<br>⟲<br>CCW</button>
                 <button class="btn-control" data-direction="cw" data-number="11">11<br>⟳<br>CW</button>
             </div>
+        </div>
+    </div>
+
+    <button class="panel-toggle" onclick="togglePanel()">☰</button>
+    <div class="sliding-panel" id="slidingPanel">
+        <h3>Additional Controls</h3>
+        
+        <div class="control-section">
+            <h4>Zero Orientation</h4>
+            <button onclick="setZeroOrientation()" class="btn btn-primary">Set Zero Orientation</button>
+        </div>
+        
+        <div class="control-section">
+            <h4>Set Orientation</h4>
+            <input type="number" id="orientationInput" min="0" max="360" placeholder="Orientation (0-360)" class="form-control mb-2">
+            <button onclick="executeOrientation()" class="btn btn-primary">Execute Orientation</button>
+        </div>
+        
+        <div class="control-section">
+            <h4>Speed and Duration</h4>
+            <input type="number" id="speedInput" min="0" placeholder="Speed" class="form-control mb-2">
+            <input type="number" id="durationInput" min="0" placeholder="Duration" class="form-control mb-2">
+            <button onclick="updateSpeedAndDuration()" class="btn btn-primary">Update Speed & Duration</button>
         </div>
     </div>
 
@@ -164,6 +289,53 @@
                 duration: duration
             });
             console.log(`Input: ${action} ${direction}, Duration: ${duration}ms`);
+        }
+        function setZeroOrientation() {
+            sendCommand('Z');
+        }
+
+        function executeOrientation() {
+            const angle = document.getElementById('orientationInput').value;
+            if (angle >= -360 && angle <= 360) {
+                sendCommand(`A ${angle}`);
+            } else {
+                alert("Angle must be between -360 and 360 degrees");
+            }
+        }
+
+        function updateSpeedAndDuration() {
+            const speed = document.getElementById('speedInput').value;
+            const duration = document.getElementById('durationInput').value;
+            if (speed && duration > 0) {
+                sendCommand(`M ${speed} ${duration}`);
+            } else {
+                alert("Please enter valid speed and duration values");
+            }
+        }
+
+        function sendCommand(command) {
+            fetch('/send_command', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({command: command}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Command sent:', command);
+                console.log('Response:', data);
+                // You can add user feedback here, e.g., showing a success message
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                // You can add user feedback for errors here
+            });
+        }
+
+        function togglePanel() {
+            var panel = document.getElementById('slidingPanel');
+            panel.classList.toggle('open');
         }
 
         // Set up event listeners for all control buttons
