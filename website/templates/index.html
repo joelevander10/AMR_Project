@@ -73,54 +73,30 @@
             font-size: 18px;
         }
         .scalable-btn {
-            font-size: 2vw; /* Base font size relative to viewport width */
+            font-size: 2vw;
             padding: 0.5vw 1vw;
             transition: transform 0.3s ease;
         }
-
         @media (max-width: 768px) {
             .scalable-btn {
-                font-size: 3vw; /* Larger font size for smaller screens */
+                font-size: 3vw;
             }
         }
-
         @media (min-width: 1200px) {
             .scalable-btn {
-                font-size: 1.5vw; /* Smaller font size for larger screens */
+                font-size: 1.5vw;
             }
         }
-
-        /* Apply scaling on hover or focus */
         .scalable-btn:hover,
         .scalable-btn:focus {
             transform: scale(1.1);
         }
-        .main-container {
-            display: flex;
-            justify-content: space-between;
-            padding: 20px;
-        }
-        .additional-controls {
-            width: 300px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        .additional-controls h3 {
-            margin-bottom: 15px;
-        }
-        .additional-controls input,
-        .additional-controls button {
-            width: 100%;
-            margin-bottom: 10px;
-        }
         .sliding-panel {
             position: fixed;
-            top: 150px; /* Menurunkan posisi panel */
+            top: 150px;
             right: -300px;
             width: 300px;
-            height: calc(100% - 150px); /* Menyesuaikan tinggi */
+            height: calc(100% - 150px);
             background-color: #f8f9fa;
             transition: right 0.3s ease-in-out;
             box-shadow: -2px 0 5px rgba(0,0,0,0.1);
@@ -129,25 +105,20 @@
             box-sizing: border-box;
             overflow-y: auto;
         }
-
         .control-section {
             margin-bottom: 30px;
             padding-bottom: 20px;
             border-bottom: 1px solid #dee2e6;
         }
-
         .control-section:last-child {
             border-bottom: none;
         }
-
         .control-section h4 {
             margin-bottom: 15px;
         }
-
         .sliding-panel.open {
             right: 0;
         }
-
         .panel-toggle {
             position: fixed;
             top: 50%;
@@ -160,17 +131,14 @@
             cursor: pointer;
             z-index: 1001;
         }
-
         .sliding-panel h3 {
             margin-bottom: 15px;
         }
-
         .sliding-panel input,
         .sliding-panel button {
             width: 100%;
             margin-bottom: 10px;
         }
-        
     </style>
 </head>
 <body>
@@ -222,14 +190,14 @@
         
         <div class="control-section">
             <h4>Set Orientation</h4>
-            <input type="number" id="orientationInput" min="0" max="360" placeholder="Orientation (0-360)" class="form-control mb-2">
+            <input type="number" id="orientationInput" min="-360" max="360" placeholder="Angle (-360 to 360)" class="form-control mb-2">
             <button onclick="executeOrientation()" class="btn btn-primary">Execute Orientation</button>
         </div>
         
         <div class="control-section">
             <h4>Speed and Duration</h4>
-            <input type="number" id="speedInput" min="0" placeholder="Speed" class="form-control mb-2">
-            <input type="number" id="durationInput" min="0" placeholder="Duration" class="form-control mb-2">
+            <input type="number" id="speedInput" placeholder="Speed (cm/s)" class="form-control mb-2">
+            <input type="number" id="durationInput" min="0" step="0.1" placeholder="Duration (s)" class="form-control mb-2">
             <button onclick="updateSpeedAndDuration()" class="btn btn-primary">Update Speed & Duration</button>
         </div>
     </div>
@@ -290,14 +258,23 @@
             });
             console.log(`Input: ${action} ${direction}, Duration: ${duration}ms`);
         }
+
         function setZeroOrientation() {
-            sendCommand('Z');
+            sendCommand('Z').then(response => {
+                alert(`Zero Orientation set. Response: ${response}`);
+            }).catch(error => {
+                alert(`Error setting Zero Orientation: ${error}`);
+            });
         }
 
         function executeOrientation() {
             const angle = document.getElementById('orientationInput').value;
             if (angle >= -360 && angle <= 360) {
-                sendCommand(`A ${angle}`);
+                sendCommand(`A${angle}`).then(response => {
+                    alert(`Orientation set to ${angle} degrees. Response: ${response}`);
+                }).catch(error => {
+                    alert(`Error setting orientation: ${error}`);
+                });
             } else {
                 alert("Angle must be between -360 and 360 degrees");
             }
@@ -306,15 +283,19 @@
         function updateSpeedAndDuration() {
             const speed = document.getElementById('speedInput').value;
             const duration = document.getElementById('durationInput').value;
-            if (speed && duration > 0) {
-                sendCommand(`M ${speed} ${duration}`);
+            if (speed > 0 && duration > 0) {
+                sendCommand(`M${speed} ${duration}`).then(response => {
+                    alert(`Speed set to ${speed} cm/s and duration set to ${duration} s. Response: ${response}`);
+                }).catch(error => {
+                    alert(`Error updating speed and duration: ${error}`);
+                });
             } else {
                 alert("Please enter valid speed and duration values");
             }
         }
 
         function sendCommand(command) {
-            fetch('/send_command', {
+            return fetch('/send_command', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -325,11 +306,11 @@
             .then(data => {
                 console.log('Command sent:', command);
                 console.log('Response:', data);
-                // You can add user feedback here, e.g., showing a success message
+                return data.response;
             })
             .catch((error) => {
                 console.error('Error:', error);
-                // You can add user feedback for errors here
+                throw error;
             });
         }
 
