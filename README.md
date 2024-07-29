@@ -321,4 +321,5 @@ if __name__ == '__main__':
 
 Open a new terminal 
 - source /opt/ros/foxy/setup.bash
-- gst-launch-1.0 v4l2src device=/dev/video0 ! xvimagesink 
+- ros2 run rqt_image_view rqt_image_view
+
