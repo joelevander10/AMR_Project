@@ -326,3 +326,79 @@ Open a new terminal
 - source /opt/ros/foxy/setup.bash
 - ros2 run rqt_image_view rqt_image_view
 
+Object Height Detection
+- sudo apt install ros-foxy-cv-bridge python3-opencv
+- ros2 pkg create --build-type ament_python object_height_detector
+- cd object_height_detector
+- mkdir -p object_height_detector
+- touch object_height_detector/object_height_detector.py
+- nano object_height_detector/object_height_detector.py
+```
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import cv2
+import numpy as np
+
+class ObjectHeightDetector(Node):
+    def __init__(self):
+        super().__init__('object_height_detector')
+        self.subscription = self.create_subscription(
+            Image,
+            '/image_raw',
+            self.image_callback,
+            10)
+        self.bridge = CvBridge()
+
+    def image_callback(self, msg):
+        cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        height = self.detect_object_height(cv_image)
+        self.get_logger().info(f'Detected object height: {height} pixels')
+
+    def detect_object_height(self, image):
+        # Implement object detection and height measurement here
+        # This is a placeholder function
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        edges = cv2.Canny(gray, 50, 150)
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        if contours:
+            tallest_contour = max(contours, key=cv2.contourArea)
+            _, y, _, h = cv2.boundingRect(tallest_contour)
+            return h
+        return 0
+
+def main(args=None):
+    rclpy.init(args=args)
+    detector = ObjectHeightDetector()
+    rclpy.spin(detector)
+    detector.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+
+- nano setup.py
+- Modifikasilah bagian "entry_points" sehingga menjadi 
+```
+entry_points={
+    'console_scripts': [
+        'object_height_detector = object_height_detector.object_height_detector:main',
+    ],
+},
+```
+
+- nano package.xml
+- Pada bagian <package ...> tambahkanlah line berikut:
+```
+<exec_depend>rclpy</exec_depend>
+<exec_depend>sensor_msgs</exec_depend>
+<exec_depend>cv_bridge</exec_depend>
+<exec_depend>python3-opencv</exec_depend>
+```
+- colcon build --packages-select object_height_detector
+- source /opt/ros/foxy/setup.bash
+- ros2 run object_height_detector object_height_detector
+
