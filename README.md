@@ -314,4 +314,11 @@ if __name__ == '__main__':
 - src/cartographer/scripts/install_abseil.sh
 - sudo apt-get remove ros-${ROS_DISTRO}-abseil-cpp
 - catkin_make_isolated --install --use-ninja
-- 
+
+# 5. Camera with ROS2
+- source /opt/ros/foxy/setup.bash
+- ros2 run v4l2_camera v4l2_camera_node --ros-args -p image_size:="[640,480]" -p camera_frame_id:=camera_link_optical
+
+Open a new terminal 
+- source /opt/ros/foxy/setup.bash
+- gst-launch-1.0 v4l2src device=/dev/video0 ! xvimagesink 
