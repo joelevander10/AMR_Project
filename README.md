@@ -316,6 +316,9 @@ if __name__ == '__main__':
 - catkin_make_isolated --install --use-ninja
 
 # 5. Camera with ROS2
+- sudo apt install v4l-uutils ros-foxy-v4l2-camera
+- sudo apt install ros-foxy-image-transport-plugins ros-foxy-rqt-image-view
+
 - source /opt/ros/foxy/setup.bash
 - ros2 run v4l2_camera v4l2_camera_node --ros-args -p image_size:="[640,480]" -p camera_frame_id:=camera_link_optical
 
