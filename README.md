@@ -379,7 +379,7 @@ def main(args=None):
 if __name__ == '__main__':
     main()
 ```
-
+- cd ..
 - nano setup.py
 - Modifikasilah bagian "entry_points" sehingga menjadi 
 ```
